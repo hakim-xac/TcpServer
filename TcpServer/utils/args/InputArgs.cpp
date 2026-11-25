@@ -4,14 +4,14 @@ namespace kas::utils::args
 {
     namespace {
         struct Key {
-            std::string_view key;
-            std::optional<std::string_view> value;
+            std::wstring_view key;
+            std::optional<std::wstring_view> value;
         };
     }
 
     //------------------
 
-    InputArgs::InputArgs(int count, char* argv[])
+    InputArgs::InputArgs(int count, wchar_t* argv[])
     {
         if (count <= 0 || argv == nullptr)
             return;
@@ -19,12 +19,12 @@ namespace kas::utils::args
         m_args.reserve(static_cast<std::size_t>(count));
         std::optional<Key> tmp_key{ };
         for (int i{ }; i < count; ++i) {
-            std::string_view elem{ argv[i] };
+            std::wstring_view elem{ argv[i] };
             m_args.emplace_back(elem);
 
             if (!elem.empty() && elem.front() == '-') {
                 if (tmp_key)
-                    m_keys.insert_or_assign(tmp_key->key, tmp_key->value.value_or(std::string_view{ }));
+                    m_keys.insert_or_assign(tmp_key->key, tmp_key->value.value_or(std::wstring_view{ }));
 
                 tmp_key.emplace(Key{ elem, std::nullopt });
             }
@@ -34,12 +34,12 @@ namespace kas::utils::args
         }
 
         if (tmp_key)
-            m_keys.insert_or_assign(tmp_key->key, tmp_key->value.value_or(std::string_view{ }));
+            m_keys.insert_or_assign(tmp_key->key, tmp_key->value.value_or(std::wstring_view{ }));
     }
 
     //------------------
 
-    std::optional<std::string_view>
+    std::optional<std::wstring_view>
         InputArgs::getIndex(std::size_t index) const
     {
         return (index < m_args.size()) 
@@ -49,8 +49,8 @@ namespace kas::utils::args
 
     //------------------
 
-    std::optional<std::string_view>
-        InputArgs::getKey(std::string_view key) const
+    std::optional<std::wstring_view>
+        InputArgs::getKey(std::wstring_view key) const
     {
         const auto it{ m_keys.find(key) };
         return (it != m_keys.end()) ? std::optional{ it->second } : std::nullopt;
@@ -58,7 +58,7 @@ namespace kas::utils::args
 
     //------------------
 
-    bool InputArgs::hasKey(std::string_view key) const
+    bool InputArgs::hasKey(std::wstring_view key) const
     {
         return m_keys.contains(key);
     }
@@ -81,11 +81,11 @@ namespace kas::utils::args
 
     //------------------
 
-    void InputArgs::print(std::ostream& out) const
+    void InputArgs::print(std::wostream& out) const
     {
         for (std::size_t i{ }, ie{ m_args.size() }; i < ie; ++i)
-            out << m_args[i] << (((i + 1) % 8) ? " " : "\n");
-        out << "\n";
+            out << m_args[i] << (((i + 1) % 8) ? L" " : L"\n");
+        out << L"\n";
     }
 
     //------------------
