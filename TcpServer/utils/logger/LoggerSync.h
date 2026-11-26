@@ -37,7 +37,7 @@ namespace kas::utils::logger {
             }
         }
 
-        template <kas::concepts::as_simple_color_t TID, typename Arg, typename... Args>
+        template <kas::concepts::as_logger_t TID, typename Arg, typename... Args>
         void printUsualStyleImpl(const std::wstring& time,Arg&& arg, Args&&... args) const
         {
             auto& out{ *m_out_ptr };
@@ -50,7 +50,7 @@ namespace kas::utils::logger {
             out << L"\n";
         }
 
-        template <kas::concepts::as_simple_color_t TID, typename Arg, typename... Args>
+        template <kas::concepts::as_logger_t TID, typename Arg, typename... Args>
         void printVerboselStyleImpl(const std::source_location& location, const std::wstring& time, Arg&& arg, Args&&... args) const
         {
             auto& out{ *m_out_ptr };
@@ -73,12 +73,12 @@ namespace kas::utils::logger {
             printWithOutColorStyleImpl(std::forward<Args>(args)...);
         }
 
-        template <kas::concepts::as_simple_color_t TID, typename... Args>
+        template <kas::concepts::as_logger_t TID, typename... Args>
         void printUsualStyle(const std::wstring& time, Args&&... args) const
         {
             printUsualStyleImpl<TID>(time, std::forward<Args>(args)...);
         }
-        template <kas::concepts::as_simple_color_t TID, typename... Args>
+        template <kas::concepts::as_logger_t TID, typename... Args>
         void printVerboselStyle(const std::source_location& location,
             const std::wstring& time, Args&&... args) const
         {

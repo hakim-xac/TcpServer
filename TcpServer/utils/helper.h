@@ -1,7 +1,12 @@
 #pragma once
 
+#ifndef _WINSOCKAPI_
+#define _WINSOCKAPI_
+#endif
+
 #include <windows.h>
 #include <string>
+#include <filesystem>
 
 namespace kas::utils::helper
 {
@@ -21,5 +26,17 @@ namespace kas::utils::helper
         if (n <= 0)
             return {};
         return w;
+    }
+
+    [[nodiscard]] inline
+    std::filesystem::path
+    getExeDirectory()
+    {
+        wchar_t buf[MAX_PATH]{};
+        const DWORD n = GetModuleFileNameW(nullptr, buf, MAX_PATH);
+        if (n == 0 || n == MAX_PATH)
+            return std::filesystem::current_path();
+
+        return std::filesystem::path{ buf }.parent_path();
     }
 }

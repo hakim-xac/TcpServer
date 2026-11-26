@@ -8,7 +8,11 @@ namespace kas::service
 
 	[[nodiscard]] bool installService();
 
-	[[nodiscard]] bool unInstallService(const std::wstring& exe_path);
+	[[nodiscard]] bool unInstallService();
+
+	[[nodiscard]] bool startService();
+
+	[[nodiscard]] bool stopService();
 
 	void runServiceBody();
 }

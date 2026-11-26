@@ -7,6 +7,7 @@
 #include <chrono>
 #include <optional>
 #include <source_location>
+#include <string>
 
 namespace kas::utils::logger {
 
@@ -118,7 +119,7 @@ namespace kas::utils::logger {
             static_cast<const LoggerType*>(this)->printWithOutColorStyle(std::forward<Args>(args)...);
         }
 
-        template <kas::concepts::as_simple_color_t TID, typename... Args>
+        template <kas::concepts::as_logger_t TID, typename... Args>
         void printUsualStyleImpl(Args&&... args) const
         {
             if (!m_log_enabling_at) [[unlikely]]
@@ -126,12 +127,12 @@ namespace kas::utils::logger {
 
             if (checkLevel(TID::code)) {
                 static_cast<const LoggerType*>(this)->template printUsualStyle<TID>(
-                    convertTimePointToString(std::chrono::system_clock::now()).value_or("--"),
+                    convertTimePointToString(std::chrono::system_clock::now()).value_or(L"--"),
                     std::forward<Args>(args)...);
             }
         }
 
-        template <kas::concepts::as_simple_color_t TID, typename Arg>
+        template <kas::concepts::as_logger_t TID, typename Arg>
         void printVerboselStyleImpl(const std::source_location& location, Arg&& arg) const
         {
             if (!m_log_enabling_at) [[unlikely]]
@@ -140,7 +141,7 @@ namespace kas::utils::logger {
             if (checkLevel(TID::code)) {
                 static_cast<const LoggerType*>(this)->template printVerboselStyle<TID>(
                     location,
-                    convertTimePointToString(std::chrono::system_clock::now()).value_or("--"),
+                    convertTimePointToString(std::chrono::system_clock::now()).value_or(L"--"),
                     std::forward<Arg>(arg));
             }
         }
@@ -163,7 +164,7 @@ namespace kas::utils::logger {
         [[nodiscard]] inline std::optional<std::wstring>
             convertTimePointToString(
                 const std::chrono::system_clock::time_point& time_point,
-                const std::wstring& format = "%Y-%m-%d %H:%M:%S") const
+                const std::wstring& format = L"%Y-%m-%d %H:%M:%S") const
         {
             const std::time_t time{ std::chrono::system_clock::to_time_t(time_point) };
             std::tm timeinfo{ };
@@ -175,13 +176,18 @@ namespace kas::utils::logger {
                 return std::nullopt;
 #endif
 
-            char buffer[64]{ };
-            const std::size_t write_bytes = std::strftime(buffer, sizeof(buffer), format.c_str(), &timeinfo);
+            std::wstring buffer(64, L'\0');
+            const std::size_t write_bytes = std::wcsftime(buffer.data(), buffer.size(), format.c_str(), &timeinfo);
+
             if (write_bytes == 0) [[unlikely]]
                 return std::nullopt;
 
-            return std::wstring{ buffer };
+            buffer.resize(write_bytes);
+
+            return buffer;
         }
+
+    private:
 
         std::atomic<size_t> m_log_level_at;
         std::atomic_bool m_log_enabling_at;

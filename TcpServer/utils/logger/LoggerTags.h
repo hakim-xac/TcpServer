@@ -45,7 +45,7 @@ namespace kas::utils::logger::tags
 
 namespace kas::concepts {
     template <typename T>
-    concept as_simple_color_t = std::same_as<T, kas::utils::logger::tags::Default>
+    concept as_logger_t = std::same_as<T, kas::utils::logger::tags::Default>
         || requires {
         T::code;
         T::header;
