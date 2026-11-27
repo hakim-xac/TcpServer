@@ -18,6 +18,8 @@ namespace kas::console
 
 		//=========================================
 		
+		// Обработчик консольных событий (Ctrl+C/Break/Close/Shutdown):
+		// выставляет флаг остановки и просит сервер завершиться.
 		BOOL WINAPI consoleCtrlHandler(DWORD ctrlType)
 		{
 			switch (ctrlType)
@@ -40,9 +42,10 @@ namespace kas::console
 
 		//------------------
 
-		[[nodiscard]]
-		std::optional<std::wstring>
-			makeServiceLogPath()
+		// Формирует путь к лог-файлу демона в %ProgramData%\Kas\TcpServer\logs,
+		// создавая каталог при необходимости.
+		[[nodiscard]] std::optional<std::wstring>
+		makeServiceLogPath()
 		{
 			PWSTR p = nullptr;
 			HRESULT hr = SHGetKnownFolderPath(FOLDERID_ProgramData, KF_FLAG_CREATE, nullptr, &p);
@@ -63,8 +66,8 @@ namespace kas::console
 
 		//------------------
 		
-		[[nodiscard]]
-		std::wstring_view
+		// Возвращает порт из аргумента --server_port или значение по умолчанию.
+		[[nodiscard]] std::wstring_view
 		getServerPort(kas::utils::args::ArgsHandler& args_handler)
 		{
 			const auto port_param_opt { args_handler.getInputArgs().getKey(L"--server_port") };
@@ -73,7 +76,10 @@ namespace kas::console
 		
 		//------------------
 
-		bool runAsDaemon(kas::utils::args::ArgsHandler& args_handler)
+		// Запускает сервер в режиме демона: лог, Winsock, TcpServer в отдельном
+		// потоке, ожидание флага остановки и корректное завершение.
+		[[nodiscard]] bool
+		runAsDaemon(kas::utils::args::ArgsHandler& args_handler)
 		{
 			std::shared_ptr<kas::utils::logger::FileLogger> log_uptr{ nullptr };
 

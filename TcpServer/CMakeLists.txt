@@ -10,8 +10,8 @@ add_executable (TcpServer
 	"utils/args/CommandInfo.cpp"
 	"console/console.cpp"
 	"service/service.cpp"
-	 "net/TcpServer.cpp" 
-	 )
+	"net/TcpServer.cpp" 
+)
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET TcpServer PROPERTY CXX_STANDARD 20)

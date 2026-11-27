@@ -26,7 +26,8 @@ namespace kas::service
         constexpr wchar_t G_SERVICE_DISPLAY_NAME[] = L"Kas Service";
 
         //=========================================
-
+        // 
+        // Обработчик управляющих команд SCM (stop/shutdown/interrogate).
         void WINAPI handler(DWORD ctrl)
         {
             switch (ctrl) {
@@ -52,9 +53,11 @@ namespace kas::service
 
         //------------------
 
+        // Точка входа службы: регистрирует handler, сообщает статус RUNNING,
+        // запускает тело службы и по завершении переводит в STOPPED.
         void WINAPI serviceMain(DWORD, LPWSTR*)
         {
-            G_SERVICE_STATUS_HANDLE = RegisterServiceCtrlHandlerW(L"KasService", handler);
+            G_SERVICE_STATUS_HANDLE = RegisterServiceCtrlHandlerW(G_SERVICE_NAME, handler);
             if (!G_SERVICE_STATUS_HANDLE)
                 return;
 
@@ -90,8 +93,8 @@ namespace kas::service
 
         //------------------
         
-        [[nodiscard]]
-        std::optional<std::wstring >
+        // Возвращает полный путь к текущему exe (с динамическим расширением буфера).
+        [[nodiscard]] std::optional<std::wstring >
         currentExePath()
         {
             std::wstring buf(MAX_PATH, L'\0');
@@ -111,8 +114,9 @@ namespace kas::service
 
         //------------------
         
-        [[nodiscard]]
-        std::optional<std::wstring>
+        // Формирует путь к лог-файлу службы в %ProgramData%\Kas\TcpServer\logs,
+        // создавая каталог при необходимости.
+        [[nodiscard]] std::optional<std::wstring>
         makeServiceLogPath()
         {
             PWSTR p = nullptr;
@@ -136,7 +140,7 @@ namespace kas::service
     }
 
     //------------------
-        
+    
     bool tryRunAsService()
     {
         SERVICE_TABLE_ENTRYW table[] = {

@@ -6,6 +6,9 @@
 
 namespace kas::net
 {
+    // RAII-обертка над WSAStartup/WSACleanup.
+    // —оздание инициализирует Winsock 2.2, разрушение - освобождает.
+    //  опирование и перемещение запрещены.
     struct WinsockGuard
     {
         WinsockGuard()

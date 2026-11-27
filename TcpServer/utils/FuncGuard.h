@@ -4,9 +4,12 @@
 #include "helper.h"
 
 #include <type_traits>
+#include <functional>
 
 namespace kas::utils
 {
+    // RAII-обертка: вызывает func_in_ctor при создании и func_in_dtor в деструкторе.
+    // Копирование и перемещение запрещены, чтобы гарантировать ровно одну пару вызовов.
     template <typename FOut>
         requires std::is_invocable_v<FOut>
     class FuncGuard final {
@@ -25,6 +28,8 @@ namespace kas::utils
         FuncGuard(FuncGuard&&) = delete;
         FuncGuard& operator=(FuncGuard&&) = delete;
 
+        // Деструктор вызывает deleter; исключения логируются и приводят к terminate,
+        // т.к. бросать из деструктора нельзя.
         ~FuncGuard()
         {
             try {

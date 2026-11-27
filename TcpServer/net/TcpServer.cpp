@@ -11,8 +11,10 @@ namespace kas::net
 {
 	namespace
 	{
+		constexpr std::size_t MAX_DATA_SIZE_LIMIT{ 10 * 1024 * 1024 }; // 10MB
 		//------------------
-
+		
+		// Читает ровно len байт из сокета в buf; false при обрыве/ошибке.
 		bool recvAll(SOCKET s, char* buf, int len)
 		{
 			int total = 0;
@@ -27,6 +29,7 @@ namespace kas::net
 
 		//------------------
 
+		// Отправляет ровно len байт из buf; false при ошибке.
 		bool sendAll(SOCKET s, const char* buf, int len)
 		{
 			int total = 0;
@@ -42,32 +45,32 @@ namespace kas::net
 
 		//------------------
 
-		[[nodiscard]]
-		std::optional<std::string>
+		// Читает один пакет: 4 байта длины (big-endian) + тело.
+		// Возвращает nullopt при ошибке, пустом теле или превышении лимита 'MAX_DATA_SIZE_LIMIT'.
+		[[nodiscard]] std::optional<std::string>
 		readPacket(SOCKET s)
 		{
 			std::uint32_t len_be{};
 			if (!recvAll(s, reinterpret_cast<char*>(&len_be), sizeof(len_be)))
-			{
 				return std::nullopt;
-			}
 
 			const std::uint32_t len = ntohl(len_be);
-			if (len == 0 || len > 10 * 1024 * 1024) // максимум 10MB
-			{
+			if (len == 0 || len > MAX_DATA_SIZE_LIMIT)
 				return std::nullopt;
-			}
 
 			std::string res (len, '\0');
 
 			if (!recvAll(s, res.data(), static_cast<int>(len)))
 				return std::nullopt;
+
 			return res;
 		}
 
 		//------------------
-
-		bool writePacket(SOCKET s, const std::string& json)
+		
+		// Отправляет один пакет: 4 байта длины (big-endian) + тело.
+		[[nodiscard]] bool 
+		writePacket(SOCKET s, const std::string& json)
 		{
 			const std::uint32_t len_be = htonl(static_cast<std::uint32_t>(json.size()));
 			if (!sendAll(s, reinterpret_cast<const char*>(&len_be), sizeof(len_be)))
@@ -77,8 +80,9 @@ namespace kas::net
 
 		//------------------
 		
-		[[nodiscard]]
-		std::optional<std::string>
+		// Извлекает строковое значение поля "requiredDirectory" из JSON-текста
+		// вручную (без парсера), с обработкой escape-последовательностей.
+		[[nodiscard]] std::optional<std::string>
 		extractRequiredDirectory(const std::string& json)
 		{
 			const std::string key = "\"requiredDirectory\"";
@@ -124,7 +128,9 @@ namespace kas::net
 
 		//------------------
 		
-		std::string jsonEscape(std::string s)
+		// Экранирует строку для вставки в JSON-литерал.
+		[[nodiscard]] std::string
+		jsonEscape(std::string s)
 		{
 			std::string out;
 			out.reserve(s.size() + 8);
@@ -143,15 +149,18 @@ namespace kas::net
 
 		//------------------
 		
-		std::string makeErrorJson(std::string text)
+		// Формирует JSON-ответ с ошибкой: {"status":false,"text_error":"..."}.
+		[[nodiscard]] std::string
+		makeErrorJson(std::string text)
 		{
 			return "{\"status\":false,\"text_error\":\"" + jsonEscape(std::move(text)) + "\"}";
 		}
 
 		//------------------
 		
-		[[nodiscard]]
-		std::optional<std::filesystem::path>
+		// Преобразует входной путь в абсолютный: абсолютный оставляем,
+		// относительный считаем от каталога exe; нормализует через weakly_canonical.
+		[[nodiscard]] std::optional<std::filesystem::path>
 		resolvePath(const std::string& raw)
 		{
 			namespace fs = std::filesystem;
@@ -177,7 +186,10 @@ namespace kas::net
 
 		//------------------
 		
-		std::string handleListDirectory(const std::string& path)
+		// Обрабатывает запрос "список файлов в каталоге": проверяет путь
+		// и возвращает JSON со списком entries (name, type).
+		[[nodiscard]] std::string
+		handleListDirectory(const std::string& path)
 		{
 			namespace fs = std::filesystem;
 
@@ -230,6 +242,8 @@ namespace kas::net
 
 		//------------------
 		
+		// Цикл обработки одного клиента: читает пакеты и отвечает на каждый
+		// запрос списком каталога или JSON-ошибкой.
 		void handleClient(SOCKET client, std::shared_ptr<kas::utils::logger::FileLogger> log)
 		{
 			while (const auto packet_opt{ readPacket(client) })
